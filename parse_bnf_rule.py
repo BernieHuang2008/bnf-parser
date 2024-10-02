@@ -43,7 +43,10 @@ class SingleRule(BNFRule):
         return " ".join(map(str, self.sequence))
 
     @classmethod
-    def compile(cls, s, i=0):
+    def compile(cls, s: str, i=0):
+        """
+        It can only handle a rule that doesn't contains '()' or '|'.
+        """
         rule = []
 
         i = i
@@ -98,6 +101,12 @@ class SingleRule(BNFRule):
         return rule
 
     def merge(self, other):
+        """
+        Merge principle:
+          - SingleRule + Terminal/NonTerminal = SingleRule with appended terminal/nonterminal
+          - SingleRule + SingleRule = SingleRule with merged sequence
+          - SingleRule + ParrelRule = SingleRule with a parrelrule-component
+        """
         if isinstance(other, Terminal) or isinstance(other, NonTerminal):
             self.sequence.append(other)
             return self
@@ -110,6 +119,14 @@ class SingleRule(BNFRule):
             raise TypeError(f"Cannot merge SingleRule with {type(other)}")
 
     def clean(self):
+        """
+        Clean and flatten the rule
+
+        Cleaning principle:
+          - Merge two beside terminals
+          - Flatten parrel rules
+        """
+
         # Merge two beside terminals
         i = 0
         while i < len(self.sequence) - 1:
@@ -165,11 +182,10 @@ class ParrelRule(BNFRule):
         return "(" + ") | (".join(map(str, self.rules)) + ")"
 
     @classmethod
-    def from_single(cls, single_rule: SingleRule):
-        return cls([single_rule])
-
-    @classmethod
     def compile(cls, s: str, i=0):
+        """
+        This function can handle a rule that contains '()' and '|'.
+        """
         rules = []
         current_rule = SingleRule.EmptyRule()
         i = i
